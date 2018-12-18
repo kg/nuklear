@@ -4353,7 +4353,7 @@ enum nk_command_meta_type {
     NK_META_PROPERTY,
     NK_META_PROPERTY_LEFT,
     NK_META_PROPERTY_RIGHT,
-    NK_META_PROPERTY_NAME,
+    NK_META_PROPERTY_LABEL,
     NK_META_PROPERTY_VALUE,
     NK_META_SCROLLBAR,
     NK_META_SCROLLBAR_CURSOR,
@@ -4365,8 +4365,9 @@ enum nk_command_meta_type {
     NK_META_COLOR_HUE,
     NK_META_COLOR_ALPHA,
     NK_META_WINDOW_BORDER,
-    NK_META_TAB_HEADER_BORDER,
-    NK_META_TAB_HEADER,
+    NK_META_TREE_HEADER_BORDER,
+    NK_META_TREE_HEADER,
+    NK_META_TREE_HEADER_TEXT,
     NK_META_CHECKBOX,
     NK_META_OPTION,
     NK_META_SELECTABLE,
@@ -15824,7 +15825,7 @@ nk_panel_begin(struct nk_context *ctx, const char *title, enum nk_panel_type pan
         label.h = font->height + 2 * style->window.header.label_padding.y;
         label.w = t + 2 * style->window.header.spacing.x;
         label.w = NK_CLAMP(0, label.w, header.x + header.w - label.x);
-        nk_widget_text(out, label,(const char*)title, text_len, &text, NK_TEXT_LEFT, font);}
+        nk_widget_text(out, label,(const char*)title, text_len, &text, NK_TEXT_LEFT, font, NK_META_NONE);}
     }
 
     /* draw window background */
@@ -18356,9 +18357,9 @@ nk_tree_state_base(struct nk_context *ctx, enum nk_tree_type type,
             text.background = nk_rgba(0,0,0,0);
         } else {
             text.background = background->data.color;
-            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TAB_HEADER_BORDER);
+            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
             nk_fill_rect(out, nk_shrink_rect(header, style->tab.border),
-                style->tab.rounding, background->data.color, NK_META_TAB_HEADER);
+                style->tab.rounding, background->data.color, NK_META_TREE_HEADER);
         }
     } else text.background = style->window.background;
 
@@ -18405,7 +18406,7 @@ nk_tree_state_base(struct nk_context *ctx, enum nk_tree_type type,
     text.text = style->tab.text;
     text.padding = nk_vec2(0,0);
     nk_widget_text(out, label, title, nk_strlen(title), &text,
-        NK_TEXT_LEFT, style->font);}
+        NK_TEXT_LEFT, style->font, NK_META_TREE_HEADER_TEXT);}
 
     /* increase x-axis cursor widget position pointer */
     if (*state == NK_MAXIMIZED) {
@@ -18542,9 +18543,9 @@ nk_tree_element_image_push_hashed_base(struct nk_context *ctx, enum nk_tree_type
             text.background = nk_rgba(0,0,0,0);
         } else {
             text.background = background->data.color;
-            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TAB_HEADER_BORDER);
+            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
             nk_fill_rect(out, nk_shrink_rect(header, style->tab.border),
-                style->tab.rounding, background->data.color, NK_META_TAB_HEADER);
+                style->tab.rounding, background->data.color, NK_META_TREE_HEADER);
         }
     } else text.background = style->window.background;
 
@@ -19153,7 +19154,7 @@ nk_spacing(struct nk_context *ctx, int cols)
 NK_LIB void
 nk_widget_text(struct nk_command_buffer *o, struct nk_rect b,
     const char *string, int len, const struct nk_text *t,
-    nk_flags a, const struct nk_user_font *f)
+    nk_flags a, const struct nk_user_font *f, enum nk_command_meta_type mt)
 {
     struct nk_rect label;
     float text_width;
@@ -19193,12 +19194,12 @@ nk_widget_text(struct nk_command_buffer *o, struct nk_rect b,
         label.y = b.y + b.h - f->height;
         label.h = f->height;
     }
-    nk_draw_text(o, label, (const char*)string, len, f, t->background, t->text, NK_META_NONE);
+    nk_draw_text(o, label, (const char*)string, len, f, t->background, t->text, mt);
 }
 NK_LIB void
 nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
     const char *string, int len, const struct nk_text *t,
-    const struct nk_user_font *f)
+    const struct nk_user_font *f, enum nk_command_meta_type mt)
 {
     float width;
     int glyphs = 0;
@@ -19228,7 +19229,7 @@ nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
     fitting = nk_text_clamp(f, string, len, line.w, &glyphs, &width, seperator,NK_LEN(seperator));
     while (done < len) {
         if (!fitting || line.y + line.h >= (b.y + b.h)) break;
-        nk_widget_text(o, line, &string[done], fitting, &text, NK_TEXT_LEFT, f);
+        nk_widget_text(o, line, &string[done], fitting, &text, NK_TEXT_LEFT, f, mt);
         done += fitting;
         line.y += f->height + 2 * t->padding.y;
         fitting = nk_text_clamp(f, &string[done], len - done, line.w, &glyphs, &width, seperator,NK_LEN(seperator));
@@ -19236,7 +19237,7 @@ nk_widget_text_wrap(struct nk_command_buffer *o, struct nk_rect b,
 }
 NK_API void
 nk_text_colored(struct nk_context *ctx, const char *str, int len,
-    nk_flags alignment, struct nk_color color)
+    nk_flags alignment, struct nk_color color, enum nk_command_meta_type mt)
 {
     struct nk_window *win;
     const struct nk_style *style;
@@ -19259,11 +19260,11 @@ nk_text_colored(struct nk_context *ctx, const char *str, int len,
     text.padding.y = item_padding.y;
     text.background = style->window.background;
     text.text = color;
-    nk_widget_text(&win->buffer, bounds, str, len, &text, alignment, style->font);
+    nk_widget_text(&win->buffer, bounds, str, len, &text, alignment, style->font, mt);
 }
 NK_API void
 nk_text_wrap_colored(struct nk_context *ctx, const char *str,
-    int len, struct nk_color color)
+    int len, struct nk_color color, enum nk_command_meta_type mt)
 {
     struct nk_window *win;
     const struct nk_style *style;
@@ -19286,7 +19287,7 @@ nk_text_wrap_colored(struct nk_context *ctx, const char *str,
     text.padding.y = item_padding.y;
     text.background = style->window.background;
     text.text = color;
-    nk_widget_text_wrap(&win->buffer, bounds, str, len, &text, style->font);
+    nk_widget_text_wrap(&win->buffer, bounds, str, len, &text, style->font, mt);
 }
 #ifdef NK_INCLUDE_STANDARD_VARARGS
 NK_API void
@@ -19403,14 +19404,14 @@ nk_text(struct nk_context *ctx, const char *str, int len, nk_flags alignment)
 {
     NK_ASSERT(ctx);
     if (!ctx) return;
-    nk_text_colored(ctx, str, len, alignment, ctx->style.text.color);
+    nk_text_colored(ctx, str, len, alignment, ctx->style.text.color, NK_META_NONE);
 }
 NK_API void
 nk_text_wrap(struct nk_context *ctx, const char *str, int len)
 {
     NK_ASSERT(ctx);
     if (!ctx) return;
-    nk_text_wrap_colored(ctx, str, len, ctx->style.text.color);
+    nk_text_wrap_colored(ctx, str, len, ctx->style.text.color, NK_META_NONE);
 }
 NK_API void
 nk_label(struct nk_context *ctx, const char *str, nk_flags alignment)
@@ -19421,17 +19422,17 @@ NK_API void
 nk_label_colored(struct nk_context *ctx, const char *str, nk_flags align,
     struct nk_color color)
 {
-    nk_text_colored(ctx, str, nk_strlen(str), align, color);
+    nk_text_colored(ctx, str, nk_strlen(str), align, color, NK_META_NONE);
 }
 NK_API void
 nk_label_wrap(struct nk_context *ctx, const char *str)
 {
-    nk_text_wrap(ctx, str, nk_strlen(str));
+    nk_text_wrap(ctx, str, nk_strlen(str), NK_META_NONE);
 }
 NK_API void
 nk_label_colored_wrap(struct nk_context *ctx, const char *str, struct nk_color color)
 {
-    nk_text_wrap_colored(ctx, str, nk_strlen(str), color);
+    nk_text_wrap_colored(ctx, str, nk_strlen(str), color, NK_META_NONE);
 }
 
 
@@ -19602,7 +19603,7 @@ nk_draw_symbol(struct nk_command_buffer *out, enum nk_symbol_type type,
         text.padding = nk_vec2(0,0);
         text.background = background;
         text.text = foreground;
-        nk_widget_text(out, content, X, 1, &text, NK_TEXT_CENTERED, font);
+        nk_widget_text(out, content, X, 1, &text, NK_TEXT_CENTERED, font, NK_META_NONE);
     } break;
     case NK_SYMBOL_CIRCLE_SOLID:
     case NK_SYMBOL_CIRCLE_OUTLINE:
@@ -19732,7 +19733,7 @@ nk_draw_button_text(struct nk_command_buffer *out,
     else text.text = style->text_normal;
 
     text.padding = nk_vec2(0,0);
-    nk_widget_text(out, *content, txt, len, &text, text_alignment, font);
+    nk_widget_text(out, *content, txt, len, &text, text_alignment, font, NK_META_BUTTON);
 }
 NK_LIB int
 nk_do_button_text(nk_flags *state,
@@ -19868,7 +19869,7 @@ nk_draw_button_text_symbol(struct nk_command_buffer *out,
 
     text.padding = nk_vec2(0,0);
     nk_draw_symbol(out, type, *symbol, style->text_background, sym, 0, font);
-    nk_widget_text(out, *label, str, len, &text, NK_TEXT_CENTERED, font);
+    nk_widget_text(out, *label, str, len, &text, NK_TEXT_CENTERED, font, NK_META_BUTTON);
 }
 NK_LIB int
 nk_do_button_text_symbol(nk_flags *state,
@@ -19924,7 +19925,7 @@ nk_draw_button_text_image(struct nk_command_buffer *out,
     else text.text = style->text_normal;
 
     text.padding = nk_vec2(0,0);
-    nk_widget_text(out, *label, str, len, &text, NK_TEXT_CENTERED, font);
+    nk_widget_text(out, *label, str, len, &text, NK_TEXT_CENTERED, font, NK_META_BUTTON);
     nk_draw_image(out, *image, img, nk_white);
 }
 NK_LIB int
@@ -20308,7 +20309,7 @@ nk_draw_checkbox(struct nk_command_buffer *out,
     text.padding.x = 0;
     text.padding.y = 0;
     text.background = style->text_background;
-    nk_widget_text(out, *label, string, len, &text, NK_TEXT_LEFT, font);
+    nk_widget_text(out, *label, string, len, &text, NK_TEXT_LEFT, font, NK_META_CHECKBOX);
 }
 NK_LIB void
 nk_draw_option(struct nk_command_buffer *out,
@@ -20350,7 +20351,7 @@ nk_draw_option(struct nk_command_buffer *out,
     text.padding.x = 0;
     text.padding.y = 0;
     text.background = style->text_background;
-    nk_widget_text(out, *label, string, len, &text, NK_TEXT_LEFT, font);
+    nk_widget_text(out, *label, string, len, &text, NK_TEXT_LEFT, font, NK_META_OPTION);
 }
 NK_LIB int
 nk_do_toggle(nk_flags *state,
@@ -20621,7 +20622,7 @@ nk_draw_selectable(struct nk_command_buffer *out,
         if (img) nk_draw_image(out, *icon, img, nk_white);
         else nk_draw_symbol(out, sym, *icon, text.background, text.text, 1, font);
     }
-    nk_widget_text(out, *bounds, string, len, &text, align, font);
+    nk_widget_text(out, *bounds, string, len, &text, align, font, NK_META_SELECTABLE);
 }
 NK_LIB int
 nk_do_selectable(nk_flags *state, struct nk_command_buffer *out,
@@ -22727,7 +22728,7 @@ nk_edit_draw_text(struct nk_command_buffer *out,
             if (is_selected) /* selection needs to draw different background color */
                 nk_fill_rect(out, label, 0, background, NK_META_SELECTION);
             nk_widget_text(out, label, line, (int)((text + text_len) - line),
-                &txt, NK_TEXT_CENTERED, font);
+                &txt, NK_TEXT_CENTERED, font, NK_META_SELECTION);
 
             text_len++;
             line_count++;
@@ -22761,7 +22762,7 @@ nk_edit_draw_text(struct nk_command_buffer *out,
         if (is_selected)
             nk_fill_rect(out, label, 0, background, NK_META_NONE);
         nk_widget_text(out, label, line, (int)((text + text_len) - line),
-            &txt, NK_TEXT_LEFT, font);
+            &txt, NK_TEXT_LEFT, font, NK_META_NONE);
     }}
 }
 NK_LIB nk_flags
@@ -23519,7 +23520,7 @@ nk_draw_property(struct nk_command_buffer *out, const struct nk_style_property *
 
     /* draw label */
     text.padding = nk_vec2(0,0);
-    nk_widget_text(out, *label, name, len, &text, NK_TEXT_CENTERED, font);
+    nk_widget_text(out, *label, name, len, &text, NK_TEXT_CENTERED, font, NK_META_PROPERTY_LABEL);
 }
 NK_LIB void
 nk_do_property(nk_flags *ws,
@@ -24563,7 +24564,7 @@ nk_combo_begin_text(struct nk_context *ctx, const char *selected, int len,
         label.w = button.x - (style->combo.content_padding.x + style->combo.spacing.x) - label.x;;
         label.h = header.h - 2 * style->combo.content_padding.y;
         nk_widget_text(&win->buffer, label, selected, len, &text,
-            NK_TEXT_LEFT, ctx->style.font);
+            NK_TEXT_LEFT, ctx->style.font, NK_META_COMBO);
 
         /* draw open/close button */
         nk_draw_button_symbol(&win->buffer, &button, &content, ctx->last_widget_state,
@@ -24832,7 +24833,7 @@ nk_combo_begin_symbol_text(struct nk_context *ctx, const char *selected, int len
         label.y = header.y + style->combo.content_padding.y;
         label.w = (button.x - style->combo.content_padding.x) - label.x;
         label.h = header.h - 2 * style->combo.content_padding.y;
-        nk_widget_text(&win->buffer, label, selected, len, &text, NK_TEXT_LEFT, style->font);
+        nk_widget_text(&win->buffer, label, selected, len, &text, NK_TEXT_LEFT, style->font, NK_META_COMBO);
     }
     return nk_combo_begin(ctx, win, size, is_clicked, header);
 }
@@ -25000,7 +25001,7 @@ nk_combo_begin_image_text(struct nk_context *ctx, const char *selected, int len,
         label.y = header.y + style->combo.content_padding.y;
         label.w = (button.x - style->combo.content_padding.x) - label.x;
         label.h = header.h - 2 * style->combo.content_padding.y;
-        nk_widget_text(&win->buffer, label, selected, len, &text, NK_TEXT_LEFT, style->font);
+        nk_widget_text(&win->buffer, label, selected, len, &text, NK_TEXT_LEFT, style->font, NK_META_COMBO);
     }
     return nk_combo_begin(ctx, win, size, is_clicked, header);
 }
