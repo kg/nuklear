@@ -19682,8 +19682,8 @@ nk_draw_button(struct nk_command_buffer *out,
     if (background->type == NK_STYLE_ITEM_IMAGE) {
         nk_draw_image(out, *bounds, &background->data.image, nk_white);
     } else {
-        nk_fill_rect(out, *bounds, style->rounding, background->data.color, NK_META_NONE);
-        nk_stroke_rect(out, *bounds, style->rounding, style->border, style->border_color, NK_META_NONE);
+        nk_fill_rect(out, *bounds, style->rounding, background->data.color, NK_META_BUTTON);
+        nk_stroke_rect(out, *bounds, style->rounding, style->border, style->border_color, NK_META_BUTTON);
     }
     return background;
 }
