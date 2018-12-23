@@ -4370,7 +4370,9 @@ enum nk_command_meta_type {
     NK_META_TREE_HEADER,
     NK_META_TREE_HEADER_TEXT,
     NK_META_CHECKBOX,
+    NK_META_CHECKBOX_STATE,
     NK_META_OPTION,
+    NK_META_OPTION_STATE,
     NK_META_SELECTABLE,
     NK_META_PROGRESS,
     NK_META_PROGRESS_CURSOR,
@@ -20299,7 +20301,7 @@ nk_draw_checkbox(struct nk_command_buffer *out,
     /* draw background and cursor */
     if (background->type == NK_STYLE_ITEM_COLOR) {
         nk_fill_rect(out, *selector, 0, style->border_color, NK_META_CHECKBOX);
-        nk_fill_rect(out, nk_shrink_rect(*selector, style->border), 0, background->data.color, NK_META_CHECKBOX);
+        nk_fill_rect(out, nk_shrink_rect(*selector, style->border), 0, background->data.color, NK_META_CHECKBOX_STATE);
     } else nk_draw_image(out, *selector, &background->data.image, nk_white);
     if (active) {
         if (cursor->type == NK_STYLE_ITEM_IMAGE)
@@ -20341,7 +20343,7 @@ nk_draw_option(struct nk_command_buffer *out,
     /* draw background and cursor */
     if (background->type == NK_STYLE_ITEM_COLOR) {
         nk_fill_circle(out, *selector, style->border_color, NK_META_OPTION);
-        nk_fill_circle(out, nk_shrink_rect(*selector, style->border), background->data.color, NK_META_OPTION);
+        nk_fill_circle(out, nk_shrink_rect(*selector, style->border), background->data.color, NK_META_OPTION_STATE);
     } else nk_draw_image(out, *selector, &background->data.image, nk_white);
     if (active) {
         if (cursor->type == NK_STYLE_ITEM_IMAGE)
