@@ -4364,6 +4364,7 @@ enum nk_command_meta_type {
     NK_META_COLOR_SATURATION_VALUE,
     NK_META_COLOR_HUE,
     NK_META_COLOR_ALPHA,
+    NK_META_WINDOW,
     NK_META_WINDOW_BORDER,
     NK_META_TREE_HEADER_BORDER,
     NK_META_TREE_HEADER,
@@ -15895,14 +15896,14 @@ nk_panel_end(struct nk_context *ctx)
         empty_space.y = layout->bounds.y;
         empty_space.h = panel_padding.y;
         empty_space.w = window->bounds.w;
-        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_NONE);
+        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_WINDOW);
 
         /* fill left empty space */
         empty_space.x = window->bounds.x;
         empty_space.y = layout->bounds.y;
         empty_space.w = panel_padding.x + layout->border;
         empty_space.h = layout->bounds.h;
-        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_NONE);
+        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_WINDOW);
 
         /* fill right empty space */
         empty_space.x = layout->bounds.x + layout->bounds.w - layout->border;
@@ -15911,7 +15912,7 @@ nk_panel_end(struct nk_context *ctx)
         empty_space.h = layout->bounds.h;
         if (*layout->offset_y == 0 && !(layout->flags & NK_WINDOW_NO_SCROLLBAR))
             empty_space.w += scrollbar_size.x;
-        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_NONE);
+        nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_WINDOW);
 
         /* fill bottom empty space */
         if (layout->footer_height > 0) {
@@ -15919,7 +15920,7 @@ nk_panel_end(struct nk_context *ctx)
             empty_space.y = layout->bounds.y + layout->bounds.h;
             empty_space.w = window->bounds.w;
             empty_space.h = layout->footer_height;
-            nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_NONE);
+            nk_fill_rect(out, empty_space, 0, style->window.background, NK_META_WINDOW);
         }
     }
 
@@ -18357,9 +18358,9 @@ nk_tree_state_base(struct nk_context *ctx, enum nk_tree_type type,
             text.background = nk_rgba(0,0,0,0);
         } else {
             text.background = background->data.color;
-            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
             nk_fill_rect(out, nk_shrink_rect(header, style->tab.border),
                 style->tab.rounding, background->data.color, NK_META_TREE_HEADER);
+            nk_stroke_rect(out, header, 0, layout->border, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
         }
     } else text.background = style->window.background;
 
@@ -18543,9 +18544,9 @@ nk_tree_element_image_push_hashed_base(struct nk_context *ctx, enum nk_tree_type
             text.background = nk_rgba(0,0,0,0);
         } else {
             text.background = background->data.color;
-            nk_fill_rect(out, header, 0, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
             nk_fill_rect(out, nk_shrink_rect(header, style->tab.border),
                 style->tab.rounding, background->data.color, NK_META_TREE_HEADER);
+            nk_stroke_rect(out, header, 0, layout->border, style->tab.border_color, NK_META_TREE_HEADER_BORDER);
         }
     } else text.background = style->window.background;
 
