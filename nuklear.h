@@ -8794,7 +8794,7 @@ NK_LIB void*
 nk_command_buffer_push(struct nk_command_buffer* b,
     enum nk_command_type t, nk_size size)
 {
-    nk_command_buffer_push_meta(b, t, size, NK_META_NONE);
+    return nk_command_buffer_push_meta(b, t, size, NK_META_NONE);
 }
 NK_API void
 nk_push_scissor(struct nk_command_buffer *b, struct nk_rect r)
