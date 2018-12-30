@@ -3479,6 +3479,7 @@ NK_API void nk_tooltipfv(struct nk_context*, NK_PRINTF_FORMAT_STRING const char*
 #endif
 NK_API int nk_tooltip_begin(struct nk_context*, float width);
 NK_API void nk_tooltip_end(struct nk_context*);
+NK_API void nk_set_scene_bounds(struct nk_context*, float x, float y, float w, float h);
 /* =============================================================================
  *
  *                                  MENU
@@ -5569,6 +5570,7 @@ struct nk_context {
     enum nk_button_behavior button_behavior;
     struct nk_configuration_stacks stacks;
     float delta_time_seconds;
+    float tooltip_vertical_offset;
 
 /* private:
     should only be accessed if you
@@ -5598,6 +5600,7 @@ struct nk_context {
     struct nk_page_element *freelist;
     unsigned int count;
     unsigned int seq;
+    struct nk_rect scene_bounds;
 };
 
 /* ==============================================================
@@ -14997,6 +15000,11 @@ nk_setup(struct nk_context *ctx, const struct nk_user_font *font)
     nk_zero_struct(*ctx);
     nk_style_default(ctx);
     ctx->seq = 1;
+    ctx->scene_bounds.x = -99999;
+    ctx->scene_bounds.y = -99999;
+    ctx->scene_bounds.w = 99999 * 2;
+    ctx->scene_bounds.h = 99999 * 2;
+    ctx->tooltip_vertical_offset = 32;
     if (font) ctx->style.font = font;
 #ifdef NK_INCLUDE_VERTEX_BUFFER_OUTPUT
     nk_draw_list_init(&ctx->draw_list);
@@ -25208,9 +25216,6 @@ nk_combobox_callback(struct nk_context *ctx,
 }
 
 
-
-
-
 /* ===============================================================
  *
  *                              TOOLTIP
@@ -25240,7 +25245,17 @@ nk_tooltip_begin(struct nk_context *ctx, float width)
     w = nk_iceilf(width);
     h = nk_iceilf(nk_null_rect.h);
     x = nk_ifloorf(in->mouse.pos.x + 1) - (int)win->layout->clip.x;
-    y = nk_ifloorf(in->mouse.pos.y + 1) - (int)win->layout->clip.y;
+    float baseY = nk_ifloorf(in->mouse.pos.y + 1) - (int)win->layout->clip.y;
+    y = baseY + ctx->tooltip_vertical_offset;
+
+    float sx2 = ctx->scene_bounds.x + ctx->scene_bounds.w;
+    float sy2 = ctx->scene_bounds.y + ctx->scene_bounds.h;
+    float x2 = ctx->current->layout->at_x + x + w;
+    float y2 = y + ctx->style.font->height;
+    if (x2 > sx2)
+        x -= x2 - sx2;
+    if (y2 > sy2)
+        y = baseY - ctx->style.font->height - ctx->tooltip_vertical_offset;
 
     bounds.x = (float)x;
     bounds.y = (float)y;
@@ -25317,6 +25332,14 @@ nk_tooltipfv(struct nk_context *ctx, const char *fmt, va_list args)
     nk_tooltip(ctx, buf);
 }
 #endif
+
+NK_API void
+nk_set_scene_bounds(struct nk_context *ctx, float x, float y, float w, float h) {
+    ctx->scene_bounds.x = x;
+    ctx->scene_bounds.y = y;
+    ctx->scene_bounds.w = w;
+    ctx->scene_bounds.h = h;
+}
 
 
 
